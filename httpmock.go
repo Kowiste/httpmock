@@ -10,7 +10,7 @@ import (
 
 type Server struct {
 	conn         *httptest.Server
-	expectations []*Expect
+	expectations map[string]*Expect
 }
 
 // create a mock server that allow insecure connection
@@ -20,6 +20,7 @@ func New() *Server {
 	s.conn.TLS = &tls.Config{
 		InsecureSkipVerify: true,
 	}
+	s.expectations=make(map[string]*Expect)
 	s.conn.StartTLS()
 	return s
 
@@ -28,9 +29,9 @@ func New() *Server {
 // close the mock http server
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	endpoint := r.URL.Path
-	queries:=r.URL.Query()
+	queries := r.URL.Query()
 	method := r.Method
-	for i, expectation := range s.expectations {
+	for _, expectation := range s.expectations {
 		if expectation.differ(method, endpoint, queries) {
 			continue
 		}
@@ -40,7 +41,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		expectation.response.setResponse(w)
 		if !expectation.keep {
-			s.expectations = append(s.expectations[:i], s.expectations[i+1])
+			delete(s.expectations, expectation.method+expectation.endpoint)
 		}
 
 		return
