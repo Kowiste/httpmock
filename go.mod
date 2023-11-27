@@ -1,4 +1,4 @@
-module httpmock
+module github.com/Kowiste/httpmock
 
 go 1.20
 
